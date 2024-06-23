@@ -1,33 +1,45 @@
 //! Triggers are checked to determine whether the machine should transition to a new state. They can
 //! be combined with the `not`, `and`, and `or` combinators. See [`Trigger`].
 
-#[cfg(feature = "leafwing_input")]
 mod input;
 
 use either::Either;
-#[cfg(feature = "leafwing_input")]
 pub use input::{
-    action_data, axis_pair, axis_pair_length_bounds, axis_pair_max_length, axis_pair_min_length,
-    axis_pair_rotation_bounds, axis_pair_unbounded, clamped_axis_pair,
-    clamped_axis_pair_length_bounds, clamped_axis_pair_max_length, clamped_axis_pair_min_length,
-    clamped_axis_pair_rotation_bounds, clamped_axis_pair_unbounded, clamped_value,
-    clamped_value_max, clamped_value_min, clamped_value_unbounded, just_pressed, just_released,
-    pressed, value, value_max, value_min, value_unbounded,
+    action_data,
+    axis_pair,
+    axis_pair_length_bounds,
+    axis_pair_max_length,
+    axis_pair_min_length,
+    axis_pair_rotation_bounds,
+    axis_pair_unbounded,
+    clamped_axis_pair,
+    clamped_axis_pair_length_bounds,
+    clamped_axis_pair_max_length,
+    clamped_axis_pair_min_length,
+    clamped_axis_pair_rotation_bounds,
+    clamped_axis_pair_unbounded,
+    clamped_value,
+    clamped_value_max,
+    clamped_value_min,
+    clamped_value_unbounded,
+    just_pressed,
+    just_released,
+    pressed,
+    value,
+    value_max,
+    value_min,
+    value_unbounded,
 };
 
-use std::{convert::Infallible, fmt::Debug};
+use std::{ convert::Infallible, fmt::Debug };
 
-use crate::{prelude::*, set::StateSet};
+use crate::{ prelude::*, set::StateSet };
 
 pub(crate) fn trigger_plugin(app: &mut App) {
     app.configure_sets(
         PostUpdate,
-        StateSet::RemoveDoneMarkers.after(StateSet::Transition),
-    )
-    .add_systems(
-        PostUpdate,
-        remove_done_markers.in_set(StateSet::RemoveDoneMarkers),
-    );
+        StateSet::RemoveDoneMarkers.after(StateSet::Transition)
+    ).add_systems(PostUpdate, remove_done_markers.in_set(StateSet::RemoveDoneMarkers));
 }
 
 /// Wrapper for [`core::convert::Infallible`]. Use for [`Trigger::Err`] if the trigger is
@@ -58,7 +70,7 @@ impl TriggerIn for Entity {
 pub trait TriggerOut {
     /// Data given to `StateMachine::trans_builder` on a success
     type Ok;
-    /// Data given to `StataMachine::trans_builder` if this trigger fails and is negated
+    /// Data given to `StateMachine::trans_builder` if this trigger fails and is negated
     type Err;
 
     /// Convert `Self` to a `Result`
@@ -70,11 +82,7 @@ impl TriggerOut for bool {
     type Err = ();
 
     fn into_result(self) -> Result<(), ()> {
-        if self {
-            Ok(())
-        } else {
-            Err(())
-        }
+        if self { Ok(()) } else { Err(()) }
     }
 }
 
@@ -114,12 +122,12 @@ pub trait IntoTrigger<Marker>: Sized {
 
     /// Negates the trigger. Do not override.
     fn not(
-        self,
+        self
     ) -> impl Trigger<
         Out = Result<
             <<Self::Trigger as Trigger>::Out as TriggerOut>::Err,
-            <<Self::Trigger as Trigger>::Out as TriggerOut>::Ok,
-        >,
+            <<Self::Trigger as Trigger>::Out as TriggerOut>::Ok
+        >
     > {
         NotTrigger(self.into_trigger())
     }
@@ -127,7 +135,7 @@ pub trait IntoTrigger<Marker>: Sized {
     /// Combines these triggers by logical AND. Do not override.
     fn and<Marker2, T: IntoTrigger<Marker2>>(
         self,
-        other: T,
+        other: T
     ) -> impl Trigger<
         Out = Result<
             (
@@ -136,9 +144,9 @@ pub trait IntoTrigger<Marker>: Sized {
             ),
             Either<
                 <<Self::Trigger as Trigger>::Out as TriggerOut>::Err,
-                <<T::Trigger as Trigger>::Out as TriggerOut>::Err,
-            >,
-        >,
+                <<T::Trigger as Trigger>::Out as TriggerOut>::Err
+            >
+        >
     > {
         AndTrigger(self.into_trigger(), other.into_trigger())
     }
@@ -146,28 +154,26 @@ pub trait IntoTrigger<Marker>: Sized {
     /// Combines these triggers by logical OR. Do not override.
     fn or<Marker2, T: IntoTrigger<Marker2>>(
         self,
-        other: T,
+        other: T
     ) -> impl Trigger<
         Out = Result<
             Either<
                 <<Self::Trigger as Trigger>::Out as TriggerOut>::Ok,
-                <<T::Trigger as Trigger>::Out as TriggerOut>::Ok,
+                <<T::Trigger as Trigger>::Out as TriggerOut>::Ok
             >,
             (
                 <<Self::Trigger as Trigger>::Out as TriggerOut>::Err,
                 <<T::Trigger as Trigger>::Out as TriggerOut>::Err,
-            ),
-        >,
+            )
+        >
     > {
         OrTrigger(self.into_trigger(), other.into_trigger())
     }
 }
 
-impl<In, Out, Marker, T: IntoSystem<In, Out, Marker>> IntoTrigger<(In, Out, Marker)> for T
-where
-    In: TriggerIn,
-    Out: TriggerOut,
-    T::System: ReadOnlySystem,
+impl<In, Out, Marker, T: IntoSystem<In, Out, Marker>> IntoTrigger<(In, Out, Marker)>
+    for T
+    where In: TriggerIn, Out: TriggerOut, T::System: ReadOnlySystem
 {
     type Trigger = SystemTrigger<T::System>;
 
@@ -199,11 +205,7 @@ impl<T: Trigger> IntoTrigger<()> for T {
 /// The trigger form of a system. See [`IntoSystem`].
 pub struct SystemTrigger<T: ReadOnlySystem>(T);
 
-impl<T: ReadOnlySystem> Trigger for SystemTrigger<T>
-where
-    T::In: TriggerIn,
-    T::Out: TriggerOut,
-{
+impl<T: ReadOnlySystem> Trigger for SystemTrigger<T> where T::In: TriggerIn, T::Out: TriggerOut {
     type Out = T::Out;
 
     fn init(&mut self, world: &mut World) {
@@ -250,7 +252,7 @@ pub struct AndTrigger<T: Trigger, U: Trigger>(pub T, pub U);
 impl<T: Trigger, U: Trigger> Trigger for AndTrigger<T, U> {
     type Out = Result<
         (<T::Out as TriggerOut>::Ok, <U::Out as TriggerOut>::Ok),
-        Either<<T::Out as TriggerOut>::Err, <U::Out as TriggerOut>::Err>,
+        Either<<T::Out as TriggerOut>::Err, <U::Out as TriggerOut>::Err>
     >;
 
     fn init(&mut self, world: &mut World) {
@@ -265,9 +267,7 @@ impl<T: Trigger, U: Trigger> Trigger for AndTrigger<T, U> {
 
         Ok((
             t.check(entity, world).into_result().map_err(Either::Left)?,
-            u.check(entity, world)
-                .into_result()
-                .map_err(Either::Right)?,
+            u.check(entity, world).into_result().map_err(Either::Right)?,
         ))
     }
 }
@@ -279,7 +279,7 @@ pub struct OrTrigger<T: Trigger, U: Trigger>(pub T, pub U);
 impl<T: Trigger, U: Trigger> Trigger for OrTrigger<T, U> {
     type Out = Result<
         Either<<T::Out as TriggerOut>::Ok, <U::Out as TriggerOut>::Ok>,
-        (<T::Out as TriggerOut>::Err, <U::Out as TriggerOut>::Err),
+        (<T::Out as TriggerOut>::Err, <U::Out as TriggerOut>::Err)
     >;
 
     fn init(&mut self, world: &mut World) {
@@ -294,10 +294,11 @@ impl<T: Trigger, U: Trigger> Trigger for OrTrigger<T, U> {
 
         match t.check(entity, world).into_result() {
             Ok(ok) => Ok(Either::Left(ok)),
-            Err(err_1) => match u.check(entity, world).into_result() {
-                Ok(ok) => Ok(Either::Right(ok)),
-                Err(err_2) => Err((err_1, err_2)),
-            },
+            Err(err_1) =>
+                match u.check(entity, world).into_result() {
+                    Ok(ok) => Ok(Either::Right(ok)),
+                    Err(err_2) => Err((err_1, err_2)),
+                }
         }
     }
 }
@@ -319,16 +320,15 @@ pub fn done(expected: Option<Done>) -> impl Trigger<Out = bool> {
     (move |In(entity): In<Entity>, dones: Query<&Done>| {
         dones
             .get(entity)
-            .map(|&done| expected.is_none() || Some(done) == expected)
+            .map(|&done| (expected.is_none() || Some(done) == expected))
             .unwrap_or(false)
-    })
-    .into_trigger()
+    }).into_trigger()
 }
 
 /// Trigger that transitions when it receives the associated event
 pub fn on_event<T: Clone + Event>(
     mut has_run: Local<bool>,
-    mut reader: EventReader<T>,
+    mut reader: EventReader<T>
 ) -> Option<T> {
     if !*has_run {
         reader.read().last();

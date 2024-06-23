@@ -31,25 +31,40 @@ pub fn state_machine_plugin(app: &mut App) {
 /// Module for convenient imports. Use with `use seldom_state::prelude::*;`.
 pub mod prelude {
     pub(crate) use bevy::prelude::*;
-    #[cfg(feature = "leafwing_input")]
-    pub(crate) use leafwing_input_manager::prelude::*;
+    pub(crate) use input_manager::prelude::*;
     pub(crate) use seldom_fn_plugin::FnPluginExt;
 
-    #[cfg(feature = "leafwing_input")]
     pub use crate::trigger::{
-        action_data, axis_pair, axis_pair_length_bounds, axis_pair_max_length,
-        axis_pair_min_length, axis_pair_rotation_bounds, axis_pair_unbounded, clamped_axis_pair,
-        clamped_axis_pair_length_bounds, clamped_axis_pair_max_length,
-        clamped_axis_pair_min_length, clamped_axis_pair_rotation_bounds,
-        clamped_axis_pair_unbounded, clamped_value, clamped_value_max, clamped_value_min,
-        clamped_value_unbounded, just_pressed, just_released, pressed, value, value_max, value_min,
+        action_data,
+        axis_pair,
+        axis_pair_length_bounds,
+        axis_pair_max_length,
+        axis_pair_min_length,
+        axis_pair_rotation_bounds,
+        axis_pair_unbounded,
+        clamped_axis_pair,
+        clamped_axis_pair_length_bounds,
+        clamped_axis_pair_max_length,
+        clamped_axis_pair_min_length,
+        clamped_axis_pair_rotation_bounds,
+        clamped_axis_pair_unbounded,
+        clamped_value,
+        clamped_value_max,
+        clamped_value_min,
+        clamped_value_unbounded,
+        just_pressed,
+        just_released,
+        pressed,
+        value,
+        value_max,
+        value_min,
         value_unbounded,
     };
     pub use crate::{
         machine::StateMachine,
-        state::{AnyState, EntityState},
+        state::{ AnyState, EntityState },
         state_machine_plugin,
-        trigger::{always, done, on_event, Done, IntoTrigger, Never, Trigger},
+        trigger::{ always, done, on_event, Done, IntoTrigger, Never, Trigger },
         StateMachinePlugin,
     };
 }
